@@ -12,9 +12,9 @@ Wrapper simple para yt-dlp que descarga solo contenido en alta calidad:
    ```bash
 
     # Método 1: Usando el script de instalación
-    curl -sSL https://raw.githubusercontent.com/caneyshulemena-boss/install_ytdlp_wrapper/main/install.sh | bash
+    curl -sSL https://raw.githubusercontent.com/caneyshulemena-boss/install_ytdlp_wrapper/main/install_quick.sh | bash
 
     # Método 2: Clonando el repositorio
     git clone https://github.com/caneyshulemena-boss/install_ytdlp_wrapper.git
     cd install_ytdlp_wrapper
-    ./install.sh
+    ./install_quick.sh
