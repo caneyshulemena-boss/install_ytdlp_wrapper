@@ -20,6 +20,8 @@ class YTDLPWrapper:
         """
         Inicializa el wrapper con configuración desde archivo JSON
         """
+        self.config = {}  # Inicializar config como diccionario vacío primero
+        
         if config_file is None:
             # Buscar configuración en directorios estándar
             config_locations = [
@@ -34,7 +36,7 @@ class YTDLPWrapper:
                     break
         
         self.config_file = config_file or os.path.expanduser("~/.config/ytdlp-wrapper/ytdlp_config.json")
-        self.config = self.load_config()
+        self.config = self.load_config()  # Ahora cargar la configuración
         
         # Determinar directorio para historial
         self.history_file = self.config.get("history_file", "download_history.json")
@@ -82,19 +84,19 @@ class YTDLPWrapper:
                     # Actualizar configuración por defecto con valores del usuario
                     default_config.update(user_config)
                     
-                    if not self.config.get("quiet", False):
+                    if not default_config.get("quiet", False):  # Usar default_config, no self.config
                         print(f"✓ Configuración cargada desde {self.config_file}")
             else:
                 # Crear archivo de configuración por defecto
                 with open(self.config_file, 'w', encoding='utf-8') as f:
                     json.dump(default_config, f, indent=4, ensure_ascii=False)
                 
-                if not self.config.get("quiet", False):
+                if not default_config.get("quiet", False):  # Usar default_config, no self.config
                     print(f"✓ Archivo de configuración creado: {self.config_file}")
                     print("  Edita el archivo para personalizar la configuración.")
                 
         except Exception as e:
-            if not self.config.get("quiet", False):
+            if not default_config.get("quiet", False):  # Usar default_config, no self.config
                 print(f"⚠ Error cargando configuración: {e}, usando valores por defecto")
             
         return default_config
@@ -539,7 +541,7 @@ class YTDLPWrapper:
         
         for i, record in enumerate(reversed(self.history["downloads"][-limit:])):
             idx = len(self.history["downloads"]) - i
-            date_str = datetime.fromisoformat(record["date"]).strftime("%Y-%m-%d %H:%M")
+            date_str = datetime.fromisoformat(record["date"]).strftime("%Y-%m-d %H:%M")
             status = "✅" if record.get("success", True) else "❌"
             title_display = record.get('title', 'Desconocido')
             if len(title_display) > 60:
