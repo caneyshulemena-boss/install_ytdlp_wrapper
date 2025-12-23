@@ -70,7 +70,8 @@ class YTDLPWrapper:
             "skip_existing": True,
             "console_title": False,
             "quiet": False,
-            "verbose": False
+            "verbose": False,
+            "create_playlist_dir": True  # Nueva opción: crear carpeta para playlists
         }
         
         try:
@@ -460,7 +461,7 @@ class YTDLPWrapper:
             self.add_to_history(url, title, "", success=False)
             return False
     
-    def download_playlist(self, playlist_url, output_path=None):
+    def download_playlist(self, playlist_url, output_path=None, no_playlist_dir=False):
         """Descarga una playlist completa"""
         if not self.config.get("quiet", False):
             print(f"\n🎵 Descargando playlist: {playlist_url}")
@@ -473,22 +474,29 @@ class YTDLPWrapper:
         playlist_name = video_info.get("playlist_title") or "playlist"
         playlist_count = video_info.get("playlist_count") or "?"
         
-        # Crear subdirectorio para la playlist
-        safe_name = "".join(c for c in playlist_name if c.isalnum() or c in (' ', '-', '_')).strip()
-        safe_name = safe_name[:50]  # Limitar longitud
-        playlist_dir = os.path.join(output_path, safe_name)
+        # Determinar el directorio de destino
+        if no_playlist_dir or not self.config.get("create_playlist_dir", True):
+            # Opción 1: Descargar directamente en output_path (sin subcarpeta)
+            playlist_dir = output_path
+            dir_display = playlist_dir
+        else:
+            # Opción 2: Crear subdirectorio para la playlist
+            safe_name = "".join(c for c in playlist_name if c.isalnum() or c in (' ', '-', '_')).strip()
+            safe_name = safe_name[:50]  # Limitar longitud
+            playlist_dir = os.path.join(output_path, safe_name)
+            dir_display = safe_name
         
         if not self.config.get("quiet", False):
             print(f"📂 Playlist: {playlist_name}")
             print(f"🎵 Videos: {playlist_count}")
-            print(f"📁 Directorio: {playlist_dir}")
+            print(f"📁 Directorio: {dir_display}")
         
         # Forzar descarga como playlist
         success = self.download(playlist_url, playlist_dir, force_playlist=True)
         
         return success
     
-    def download_from_list(self, file_path, output_path=None, is_playlist=False):
+    def download_from_list(self, file_path, output_path=None, is_playlist=False, no_playlist_dir=False):
         """Descarga múltiples URLs desde un archivo de texto"""
         if not os.path.exists(file_path):
             print(f"❌ Archivo no encontrado: {file_path}")
@@ -513,7 +521,7 @@ class YTDLPWrapper:
                     print(f"{'='*60}")
                 
                 if is_playlist or self.is_playlist_url(url):
-                    if self.download_playlist(url, output_path):
+                    if self.download_playlist(url, output_path, no_playlist_dir):
                         success_count += 1
                 else:
                     if self.download(url, output_path):
@@ -578,6 +586,7 @@ Ejemplos:
   ytdlp --config mostrar                 # Mostrar configuración
   ytdlp -o ./mis_descargas URL           # Directorio personalizado
   ytdlp --playlist-file lista.txt        # Descargar playlists desde archivo
+  ytdlp --no-playlist-dir URL            # No crear carpeta para playlists
 
 Archivo de lista de URLs:
   # Comentarios con #
@@ -601,6 +610,7 @@ Modos:
     parser.add_argument("-f", "--file", help="Archivo de texto con lista de URLs a descargar")
     parser.add_argument("--playlist-file", help="Archivo de texto con lista de playlists a descargar")
     parser.add_argument("-o", "--directorio", help="Directorio de salida personalizado")
+    parser.add_argument("--no-playlist-dir", action="store_true", help="No crear subcarpetas para playlists")
     parser.add_argument("-c", "--config", choices=["mostrar", "ruta"], help="Mostrar configuración o ruta del archivo")
     parser.add_argument("-H", "--historial", action="store_true", help="Mostrar historial de descargas")
     parser.add_argument("--limpiar-historial", action="store_true", help="Borrar historial de descargas")
@@ -648,10 +658,10 @@ Modos:
     
     # Descargar desde archivo
     if args.file:
-        wrapper.download_from_list(args.file, args.directorio, is_playlist=False)
+        wrapper.download_from_list(args.file, args.directorio, is_playlist=False, no_playlist_dir=args.no_playlist_dir)
         return
     elif args.playlist_file:
-        wrapper.download_from_list(args.playlist_file, args.directorio, is_playlist=True)
+        wrapper.download_from_list(args.playlist_file, args.directorio, is_playlist=True, no_playlist_dir=args.no_playlist_dir)
         return
     
     # Verificar que se proporcionó una URL
@@ -662,7 +672,7 @@ Modos:
     
     # Ejecutar descarga
     if args.playlist or wrapper.is_playlist_url(args.url):
-        wrapper.download_playlist(args.url, args.directorio)
+        wrapper.download_playlist(args.url, args.directorio, no_playlist_dir=args.no_playlist_dir)
     else:
         wrapper.download(args.url, args.directorio)
 
